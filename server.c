@@ -16,8 +16,10 @@ int main (int argc, char * argv[]) {
 	
 	struct sockaddr_in server;
 	int sockfd, n, count = 0;
-	int ttl = 60;
+	int ttl = 30;
 	char message[50];
+	
+	int reuse = 1; 
 	
 	//create a socket and error check
 	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -25,6 +27,11 @@ int main (int argc, char * argv[]) {
 	if (sockfd < 0) {
 		printf("Socket error = %d\n", sockfd);
 		return (-1);
+	}
+	//allow socket to be reused if it's still waiting on old process
+	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) < 0) {
+       printf("unable to reuse socket");
+       exit(1);
 	}
 	setsockopt(sockfd,IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl));
 	
@@ -35,14 +42,6 @@ int main (int argc, char * argv[]) {
 	server.sin_port = htons(PORT);
 	server.sin_addr.s_addr = inet_addr(GROUP);
 	
-	//bind socket
-	n = bind(sockfd, (struct sockaddr *) &server, sizeof(server));
-	if (n < 0) {
-		printf("bind result = %d\n", n);
-		return (-1);
-	} else {
-		printf("UDP multicast server is ready. Sending messages. \n\n");
-	}
 	
 	while (1) {
 		count++;
